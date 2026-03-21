@@ -1,0 +1,20 @@
+server:
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 1s
+  grpc:
+    addr: 0.0.0.0:9000
+    timeout: 1s
+
+data:
+  database:
+    business:
+      driver: postgres
+      source: "host=127.0.0.1 port=5432 user=luminance dbname=luminance sslmode=disable"
+    vector:
+      driver: postgres
+      source: "host=127.0.0.1 port=5433 user=luminance dbname=luminance_vector sslmode=disable"
+
+log:
+  level: info
+  path: /data/log/luminance-api.log

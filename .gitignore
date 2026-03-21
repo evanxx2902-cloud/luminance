@@ -1,0 +1,18 @@
+# Go
+backend/bin/
+backend/*.out
+backend/vendor/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Python
+ai/__pycache__/
+ai/*.pyc
+ai/.venv/
+
+# Docker / OS
+.env
+*.log
+.DS_Store

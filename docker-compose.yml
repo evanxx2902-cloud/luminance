@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  luminance:
+    build: .
+    image: luminance:latest
+    container_name: luminance
+    ports:
+      - "80:80"       # Nginx — frontend + API proxy
+      - "2812:2812"   # monit web UI (localhost only in production)
+    volumes:
+      - /opt/luminance:/data   # persistent data: logs, PG data dirs
+    restart: unless-stopped

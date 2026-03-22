@@ -2,137 +2,106 @@ package data
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"time"
 
+	"github.com/luminance/backend/ent"
+	"github.com/luminance/backend/ent/user"
 	"github.com/luminance/backend/internal/biz"
 	"github.com/luminance/backend/pkg/crypto"
 )
 
 // userRepo 用户仓库实现
 type userRepo struct {
-	db *sql.DB
+	client *ent.Client
 }
 
 // NewUserRepo 创建用户仓库
-func NewUserRepo(db *sql.DB) biz.UserRepo {
-	return &userRepo{db: db}
+func NewUserRepo(client *ent.Client) biz.UserRepo {
+	return &userRepo{client: client}
+}
+
+// toBizUser 将 ent.User 转换为 biz.User
+func toBizUser(u *ent.User) *biz.User {
+	return &biz.User{
+		ID:             u.ID,
+		Username:       u.Username,
+		PasswordHash:   u.PasswordHash,
+		Salt:           u.Salt,
+		IsMember:       u.IsMember,
+		MemberLevel:    int32(u.MemberLevel),
+		MemberExpireAt: u.MemberExpireAt,
+		FreeTrialCount: u.FreeTrialCount,
+		Avatar:         u.Avatar,
+		CreatedAt:      u.CreatedAt,
+	}
 }
 
 // Create 创建用户
-func (r *userRepo) Create(ctx context.Context, user *biz.User) error {
+func (r *userRepo) Create(ctx context.Context, u *biz.User) error {
 	// 生成盐值并哈希密码
 	salt, err := crypto.GenerateSalt()
 	if err != nil {
 		return err
 	}
-	hash := crypto.HashPassword(user.PasswordHash, salt)
+	hash := crypto.HashPassword(u.PasswordHash, salt)
 
-	query := `
-		INSERT INTO users (username, password_hash, salt, is_member, member_level,
-						   free_trial_count, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id
-	`
-	now := time.Now()
-	return r.db.QueryRowContext(ctx, query,
-		user.Username,
-		hash,
-		salt,
-		user.IsMember,
-		user.MemberLevel,
-		user.FreeTrialCount,
-		now,
-		now,
-	).Scan(&user.ID)
+	created, err := r.client.User.Create().
+		SetUsername(u.Username).
+		SetPasswordHash(hash).
+		SetSalt(salt).
+		SetIsMember(u.IsMember).
+		SetMemberLevel(int16(u.MemberLevel)).
+		SetFreeTrialCount(u.FreeTrialCount).
+		SetAvatar(u.Avatar).
+		SetCreatedAt(time.Now()).
+		SetUpdatedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+
+	u.ID = created.ID
+	return nil
 }
 
 // FindByUsername 根据用户名查找用户
 func (r *userRepo) FindByUsername(ctx context.Context, username string) (*biz.User, error) {
-	query := `
-		SELECT id, username, password_hash, salt, is_member, member_level,
-			   member_expire_at, free_trial_count, avatar, created_at
-		FROM users
-		WHERE username = $1
-	`
-	user := &biz.User{}
-	var memberExpireAt sql.NullTime
-	err := r.db.QueryRowContext(ctx, query, username).Scan(
-		&user.ID,
-		&user.Username,
-		&user.PasswordHash,
-		&user.Salt,
-		&user.IsMember,
-		&user.MemberLevel,
-		&memberExpireAt,
-		&user.FreeTrialCount,
-		&user.Avatar,
-		&user.CreatedAt,
-	)
+	u, err := r.client.User.Query().
+		Where(user.Username(username)).
+		Only(ctx)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if ent.IsNotFound(err) {
 			return nil, biz.ErrUserNotFound
 		}
 		return nil, err
 	}
-	if memberExpireAt.Valid {
-		user.MemberExpireAt = &memberExpireAt.Time
-	}
-	return user, nil
+	return toBizUser(u), nil
 }
 
 // FindByID 根据 ID 查找用户
 func (r *userRepo) FindByID(ctx context.Context, id int32) (*biz.User, error) {
-	query := `
-		SELECT id, username, password_hash, salt, is_member, member_level,
-			   member_expire_at, free_trial_count, avatar, created_at
-		FROM users
-		WHERE id = $1
-	`
-	user := &biz.User{}
-	var memberExpireAt sql.NullTime
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&user.ID,
-		&user.Username,
-		&user.PasswordHash,
-		&user.Salt,
-		&user.IsMember,
-		&user.MemberLevel,
-		&memberExpireAt,
-		&user.FreeTrialCount,
-		&user.Avatar,
-		&user.CreatedAt,
-	)
+	u, err := r.client.User.Get(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if ent.IsNotFound(err) {
 			return nil, biz.ErrUserNotFound
 		}
 		return nil, err
 	}
-	if memberExpireAt.Valid {
-		user.MemberExpireAt = &memberExpireAt.Time
-	}
-	return user, nil
+	return toBizUser(u), nil
 }
 
 // UpdateAvatar 更新头像
 func (r *userRepo) UpdateAvatar(ctx context.Context, id int32, avatar string) error {
-	query := `
-		UPDATE users
-		SET avatar = $1, updated_at = $2
-		WHERE id = $3
-	`
-	result, err := r.db.ExecContext(ctx, query, avatar, time.Now(), id)
+	n, err := r.client.User.UpdateOneID(id).
+		SetAvatar(avatar).
+		SetUpdatedAt(time.Now()).
+		Save(ctx)
 	if err != nil {
+		if ent.IsNotFound(err) {
+			return biz.ErrUserNotFound
+		}
 		return err
 	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return biz.ErrUserNotFound
-	}
+	_ = n
 	return nil
 }

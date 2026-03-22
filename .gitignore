@@ -25,3 +25,7 @@ backend/api/**/*_grpc.pb.go
 
 # OpenAPI generated specs
 api/openapi/**/*.swagger.json
+
+# Ent generated code
+backend/ent/
+!backend/ent/schema/

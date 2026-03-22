@@ -44,6 +44,28 @@ git commit -m "api: update DocumentService proto and regenerate"
 
 **禁止**创建或使用 `git worktree`。所有开发工作直接在主工作目录中进行，通过普通分支管理并行工作。
 
+## 规则 4：Data 层实现规范
+
+### ORM 选型
+- **必须使用 entgo** 作为 ORM 框架
+- **禁止**手写 SQL（除复杂查询外）
+- **禁止**使用原生 database/sql 进行 CRUD 操作
+
+### Schema 定义
+- Schema 文件位于 `backend/ent/schema/`
+- 使用 entgo 的 schema 定义生成代码
+- 数据库迁移使用 entgo 的 migration 工具
+
+### 代码生成流程
+```bash
+# 修改 schema 后运行
+cd backend
+go generate ./ent/...
+
+# 或直接使用 ent CLI
+ent generate --target ./ent ./ent/schema
+```
+
 ---
 
 ### 数据库迁移流程

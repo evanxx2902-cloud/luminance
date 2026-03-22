@@ -9,6 +9,9 @@ PROTO_DIR="${PROJECT_ROOT}/api/proto/v1"
 OPENAPI_DIR="${PROJECT_ROOT}/api/openapi/v1"
 BACKEND_API_DIR="${PROJECT_ROOT}/backend/api/luminance/v1"
 
+# Kratos third_party proto 路径（包含 google/api/annotations.proto）
+KRATOS_THIRD_PARTY="$(go env GOPATH)/pkg/mod/github.com/go-kratos/kratos/v2@v2.9.2/third_party"
+
 echo "=== Generating API code ==="
 echo "Proto dir: ${PROTO_DIR}"
 
@@ -42,11 +45,29 @@ cd "${PROJECT_ROOT}/backend"
 
 protoc \
     --proto_path="${PROTO_DIR}" \
+    --proto_path="${KRATOS_THIRD_PARTY}" \
     --go_out=paths=source_relative:"${BACKEND_API_DIR}" \
     --go-grpc_out=paths=source_relative:"${BACKEND_API_DIR}" \
     "${PROTO_DIR}"/*.proto
 
 echo "Go code generated at: ${BACKEND_API_DIR}"
+
+# 生成 gRPC-Gateway 代码
+if command -v protoc-gen-grpc-gateway &> /dev/null; then
+    echo ""
+    echo "=== Generating gRPC-Gateway code ==="
+    protoc \
+        --proto_path="${PROTO_DIR}" \
+        --proto_path="${KRATOS_THIRD_PARTY}" \
+        --grpc-gateway_out=paths=source_relative:"${BACKEND_API_DIR}" \
+        --grpc-gateway_opt=generate_unbound_methods=true \
+        "${PROTO_DIR}"/*.proto
+    echo "Gateway code generated at: ${BACKEND_API_DIR}"
+else
+    echo ""
+    echo "Skipping gRPC-Gateway generation (protoc-gen-grpc-gateway not installed)"
+    echo "To install: go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest"
+fi
 
 # 生成 OpenAPI (使用 grpc-gateway 的 protoc-gen-openapiv2)
 if command -v protoc-gen-openapiv2 &> /dev/null; then
@@ -54,6 +75,7 @@ if command -v protoc-gen-openapiv2 &> /dev/null; then
     echo "=== Generating OpenAPI spec ==="
     protoc \
         --proto_path="${PROTO_DIR}" \
+        --proto_path="${KRATOS_THIRD_PARTY}" \
         --openapiv2_out="${OPENAPI_DIR}" \
         --openapiv2_opt=logtostderr=true \
         "${PROTO_DIR}"/*.proto

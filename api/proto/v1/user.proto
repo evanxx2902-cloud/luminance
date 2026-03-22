@@ -1,0 +1,65 @@
+syntax = "proto3";
+package luminance.v1;
+option go_package = "github.com/luminance/backend/api/luminance/v1;v1";
+
+import "google/api/annotations.proto";
+
+service UserService {
+  rpc Register (RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/register" body: "*" };
+  }
+  rpc Login (LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/login" body: "*" };
+  }
+  rpc Refresh (RefreshRequest) returns (RefreshResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/refresh" body: "*" };
+  }
+  rpc Logout (LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = { post: "/api/v1/auth/logout" body: "*" };
+  }
+  rpc GetProfile (GetProfileRequest) returns (UserProfile) {
+    option (google.api.http) = { get: "/api/v1/user/profile" };
+  }
+  rpc UpdateProfile (UpdateProfileRequest) returns (UserProfile) {
+    option (google.api.http) = { put: "/api/v1/user/profile" body: "*" };
+  }
+}
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+}
+message RegisterResponse {
+  string access_token  = 1;
+  string refresh_token = 2;
+  int64  expires_in    = 3;
+  UserProfile profile  = 4;
+}
+message LoginRequest {
+  string auth_type   = 1;  // "password" | "wechat"（扩展点）
+  string username    = 2;
+  string password    = 3;
+  string wechat_code = 4;  // 预留
+}
+message LoginResponse {
+  string access_token  = 1;
+  string refresh_token = 2;
+  int64  expires_in    = 3;
+  UserProfile profile  = 4;
+}
+message RefreshRequest  { string refresh_token = 1; }
+message RefreshResponse { string access_token = 1; int64 expires_in = 2; }
+message LogoutRequest   {}
+message LogoutResponse  { bool success = 1; }
+message GetProfileRequest    {}
+message UpdateProfileRequest { optional string avatar = 1; }
+message UserProfile {
+  int64  id               = 1;
+  string username         = 2;
+  bool   is_member        = 3;
+  int32  member_level     = 4;
+  int64  member_expire_at = 5;
+  int32  free_trial_count = 6;
+  string avatar           = 7;
+  int64  created_at       = 8;
+}

@@ -101,10 +101,8 @@ RUN curl -fsSL -o /tmp/monit.tar.gz \
     rm -rf /tmp/monit*
 
 # ── tini (PID 1 init system) ─────────────────────────────────────────────
-# tini is not in AlmaLinux base repos, install from GitHub release
-RUN curl -fsSL -o /usr/local/bin/tini \
-      https://github.com/krallin/tini/releases/download/v0.19.0/tini-amd64 && \
-    chmod +x /usr/local/bin/tini
+COPY third_party/tini-amd64 /usr/local/bin/tini
+RUN chmod +x /usr/local/bin/tini
 
 # Symlink PG 15 binaries to a PATH location used by scripts and monit
 RUN ln -s /usr/pgsql-15/bin/initdb   /usr/local/bin/initdb   && \

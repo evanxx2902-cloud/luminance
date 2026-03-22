@@ -4,28 +4,48 @@
 FROM golang:1.24-alpine AS go-builder
 
 # Install protoc and dependencies for code generation
-RUN apk add --no-cache protobuf git
+RUN apk add --no-cache protobuf git curl
+
+# Install Go protoc plugins
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
 
 WORKDIR /build
 
-# Copy proto files and generate Go code
+# Copy proto files
 COPY api/ ./api/
-COPY scripts/gen-api.sh ./scripts/
-COPY backend/go.mod backend/go.sum ./backend/
 
-# Create directory for generated code and generate
-RUN mkdir -p backend/api/luminance/v1
+# Download Kratos third_party proto files
+RUN mkdir -p third_party && \
+    cd third_party && \
+    go mod init temp && \
+    go get github.com/go-kratos/kratos/v2@v2.9.2 && \
+    cp -r $(go env GOPATH)/pkg/mod/github.com/go-kratos/kratos/v2@v2.9.2/third_party/* . || true
+
+# Copy go.mod/go.sum and download dependencies
+COPY backend/go.mod backend/go.sum ./backend/
 WORKDIR /build/backend
 RUN go mod download
 
-WORKDIR /build
-ENV PATH="$PATH:$(go env GOPATH)/bin"
-RUN chmod +x scripts/gen-api.sh && ./scripts/gen-api.sh || true
+# Create output directory for generated code
+RUN mkdir -p api/luminance/v1
 
-# Now copy the rest of backend and build
+# Generate Go code from proto
+WORKDIR /build
+RUN protoc \
+    --proto_path=./api/proto/v1 \
+    --proto_path=./third_party \
+    --go_out=paths=source_relative:./backend/api/luminance/v1 \
+    --go-grpc_out=paths=source_relative:./backend/api/luminance/v1 \
+    --grpc-gateway_out=paths=source_relative:./backend/api/luminance/v1 \
+    --grpc-gateway_opt=generate_unbound_methods=true \
+    ./api/proto/v1/*.proto
+
+# Copy the rest of backend source code
 COPY backend/ ./backend/
+
+# Build binaries
 WORKDIR /build/backend
 RUN CGO_ENABLED=0 GOOS=linux go build -o luminance-api ./cmd/luminance-api
 RUN CGO_ENABLED=0 GOOS=linux go build -o luminance-migrate ./cmd/migrate

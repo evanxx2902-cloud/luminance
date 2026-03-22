@@ -40,6 +40,12 @@ git add api/ backend/api/
 git commit -m "api: update DocumentService proto and regenerate"
 ```
 
+## 规则 3：禁止使用 Git Worktree
+
+**禁止**创建或使用 `git worktree`。所有开发工作直接在主工作目录中进行，通过普通分支管理并行工作。
+
+---
+
 ### 数据库迁移流程
 ```bash
 # 创建新迁移

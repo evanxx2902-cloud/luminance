@@ -66,17 +66,21 @@ RUN npm run build
 
 
 # =============================================================================
-# Stage 3: Runtime — CentOS 7
+# Stage 3: Runtime — AlmaLinux 8 (RHEL-compatible, long-term support)
 # =============================================================================
-FROM centos:7
+FROM almalinux:8
+
+# Disable AlmaLinux default repos and enable vault repos for EOL handling if needed
+# Install EPEL first for additional packages
+RUN dnf install -y epel-release && \
+    dnf config-manager --set-enabled powertools && \
+    dnf clean all
 
 # ── PostgreSQL 15 via official PGDG yum repo ──────────────────────────────
-# CentOS 7 default repos provide PG 9.2 — far too old for pgvector support.
-# PGDG provides PG 15 for EL7.
-RUN yum install -y \
-      https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
-      epel-release && \
-    yum install -y \
+# PGDG provides PG 15 for EL8.
+RUN dnf install -y \
+      https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    dnf install -y \
       tini \
       monit \
       nginx \
@@ -85,7 +89,7 @@ RUN yum install -y \
       sudo \
       curl \
       redis && \
-    yum clean all
+    dnf clean all
 
 # Symlink PG 15 binaries to a PATH location used by scripts and monit
 RUN ln -s /usr/pgsql-15/bin/initdb   /usr/local/bin/initdb   && \
@@ -93,25 +97,24 @@ RUN ln -s /usr/pgsql-15/bin/initdb   /usr/local/bin/initdb   && \
     ln -s /usr/pgsql-15/bin/psql     /usr/local/bin/psql     && \
     ln -s /usr/pgsql-15/bin/postgres /usr/local/bin/postgres
 
-# ── Python 3.9 via Software Collections (SCL) ────────────────────────────
-# CentOS 7 ships Python 3.6; sentence-transformers + fastapi require >= 3.8.
-RUN yum install -y centos-release-scl && \
-    yum install -y rh-python39 rh-python39-python-pip && \
-    yum clean all
+# ── Python 3.9 via AlmaLinux 8 AppStream ────────────────────────────────
+# AlmaLinux 8 provides python39 package directly in AppStream.
+RUN dnf install -y python39 python39-pip && \
+    dnf clean all
 
 # Symlink python3.9 / pip3.9 so scripts can use python3/pip3 unqualified
-RUN ln -sf /opt/rh/rh-python39/root/usr/bin/python3.9 /usr/local/bin/python3 && \
-    ln -sf /opt/rh/rh-python39/root/usr/bin/pip3.9    /usr/local/bin/pip3
+RUN ln -sf /usr/bin/python3.9 /usr/local/bin/python3 && \
+    ln -sf /usr/bin/pip3.9    /usr/local/bin/pip3
 
 # ── pgvector — build from source against PG 15 headers ───────────────────
-RUN yum install -y postgresql15-devel make gcc git && \
+RUN dnf install -y postgresql15-devel make gcc git && \
     git clone --branch v0.7.0 https://github.com/pgvector/pgvector.git /tmp/pgvector && \
     cd /tmp/pgvector && \
       PG_CONFIG=/usr/pgsql-15/bin/pg_config make && \
       PG_CONFIG=/usr/pgsql-15/bin/pg_config make install && \
     rm -rf /tmp/pgvector && \
-    yum remove -y git make gcc postgresql15-devel && \
-    yum clean all
+    dnf remove -y git make gcc postgresql15-devel && \
+    dnf clean all
 
 # ── Runtime directory layout ──────────────────────────────────────────────
 RUN mkdir -p \

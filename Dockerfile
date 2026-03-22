@@ -46,8 +46,11 @@ RUN protoc \
 # Copy the rest of backend source code
 COPY backend/ ./backend/
 
-# Build binaries
+# Generate ent ORM code from schema
 WORKDIR /build/backend
+RUN go run entgo.io/ent/cmd/ent generate ./ent/schema
+
+# Build binaries
 RUN CGO_ENABLED=0 GOOS=linux go build -o luminance-api ./cmd/luminance-api
 RUN CGO_ENABLED=0 GOOS=linux go build -o luminance-migrate ./cmd/migrate
 

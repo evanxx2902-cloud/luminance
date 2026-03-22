@@ -27,5 +27,9 @@ echo "[start] Stopping temporary PostgreSQL instances..."
 /usr/local/bin/pg_ctl -D /data/pg-business stop || true
 /usr/local/bin/pg_ctl -D /data/pg-vector stop || true
 
+# 确保 redis pid 目录存在（redis 进程以 root 运行）
+echo "[start] Ensuring Redis runtime directories..."
+mkdir -p /var/run/redis
+
 echo "[start] Handing off to monit..."
 exec /usr/bin/monit -Ic /etc/monit/monitrc

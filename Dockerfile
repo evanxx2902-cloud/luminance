@@ -42,7 +42,8 @@ RUN yum install -y \
       postgresql15-server \
       postgresql15-contrib \
       sudo \
-      curl && \
+      curl \
+      redis && \
     yum clean all
 
 # Symlink PG 15 binaries to a PATH location used by scripts and monit
@@ -81,6 +82,7 @@ RUN mkdir -p \
       /data/log \
       /data/pg-business \
       /data/pg-vector \
+      /data/redis \
       /etc/monit/conf.d \
       /etc/nginx/conf.d
 

@@ -78,10 +78,11 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
 # ── PostgreSQL 15 via official PGDG yum repo ──────────────────────────────
 # PGDG provides PG 15 for EL8.
 # Note: Skip EPEL for now due to network issues in container
+# Disable built-in PostgreSQL module to allow PGDG packages
 RUN dnf install -y \
       https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    dnf -qy module disable postgresql && \
     dnf install -y \
-      monit \
       nginx \
       postgresql15-server \
       postgresql15-contrib \
@@ -89,6 +90,15 @@ RUN dnf install -y \
       curl \
       redis && \
     dnf clean all
+
+# ── monit (process supervisor) ────────────────────────────────────────────
+# monit is in EPEL, install from GitHub release instead
+RUN curl -fsSL -o /tmp/monit.tar.gz \
+      https://mmonit.com/monit/dist/binary/5.33.0/monit-5.33.0-linux-x64.tar.gz && \
+    tar -xzf /tmp/monit.tar.gz -C /tmp && \
+    cp /tmp/monit-5.33.0/bin/monit /usr/local/bin/monit && \
+    chmod +x /usr/local/bin/monit && \
+    rm -rf /tmp/monit*
 
 # ── tini (PID 1 init system) ─────────────────────────────────────────────
 # tini is not in AlmaLinux base repos, install from GitHub release

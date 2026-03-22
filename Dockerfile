@@ -4,7 +4,7 @@
 FROM golang:1.24-alpine AS go-builder
 
 # Install protoc and dependencies for code generation
-RUN apk add --no-cache protobuf git curl
+RUN apk add --no-cache protobuf protobuf-dev git curl
 
 # Install Go protoc plugins
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -36,6 +36,7 @@ WORKDIR /build
 RUN protoc \
     --proto_path=./api/proto/v1 \
     --proto_path=./third_party \
+    --proto_path=/usr/include \
     --go_out=paths=source_relative:./backend/api/luminance/v1 \
     --go-grpc_out=paths=source_relative:./backend/api/luminance/v1 \
     --grpc-gateway_out=paths=source_relative:./backend/api/luminance/v1 \

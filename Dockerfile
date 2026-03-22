@@ -131,6 +131,10 @@ RUN dnf install -y postgresql15-devel make gcc git redhat-rpm-config && \
     dnf remove -y git make gcc postgresql15-devel redhat-rpm-config && \
     dnf clean all
 
+# ── Create luminance user for PostgreSQL ─────────────────────────────────
+RUN groupadd -r luminance && \
+    useradd -r -g luminance -d /data -s /bin/bash luminance
+
 # ── Runtime directory layout ──────────────────────────────────────────────
 RUN mkdir -p \
       /opt/luminance/bin \
@@ -143,7 +147,8 @@ RUN mkdir -p \
       /data/pg-vector \
       /data/redis \
       /etc/monit/conf.d \
-      /etc/nginx/conf.d
+      /etc/nginx/conf.d && \
+    chown -R luminance:luminance /data
 
 # ── Copy compiled artifacts from build stages ────────────────────────────
 COPY --from=go-builder       /build/backend/luminance-api     /opt/luminance/bin/luminance-api

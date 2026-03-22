@@ -54,7 +54,7 @@ message LogoutResponse  { bool success = 1; }
 message GetProfileRequest    {}
 message UpdateProfileRequest { optional string avatar = 1; }
 message UserProfile {
-  int32  id               = 1;
+  int64  id               = 1;
   string username         = 2;
   bool   is_member        = 3;
   int32  member_level     = 4;

@@ -536,7 +536,7 @@ func (x *UpdateProfileRequest) GetAvatar() string {
 
 type UserProfile struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	Id             int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id             int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Username       string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	IsMember       bool                   `protobuf:"varint,3,opt,name=is_member,json=isMember,proto3" json:"is_member,omitempty"`
 	MemberLevel    int32                  `protobuf:"varint,4,opt,name=member_level,json=memberLevel,proto3" json:"member_level,omitempty"`
@@ -578,7 +578,7 @@ func (*UserProfile) Descriptor() ([]byte, []int) {
 	return file_user_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *UserProfile) GetId() int32 {
+func (x *UserProfile) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
@@ -675,7 +675,7 @@ const file_user_proto_rawDesc = "" +
 	"\x06avatar\x18\x01 \x01(\tH\x00R\x06avatar\x88\x01\x01B\t\n" +
 	"\a_avatar\"\x84\x02\n" +
 	"\vUserProfile\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x1a\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1b\n" +
 	"\tis_member\x18\x03 \x01(\bR\bisMember\x12!\n" +
 	"\fmember_level\x18\x04 \x01(\x05R\vmemberLevel\x12(\n" +

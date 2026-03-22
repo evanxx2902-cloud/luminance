@@ -4,7 +4,7 @@
 FROM golang:1.24-alpine AS go-builder
 
 # Install protoc and dependencies for code generation
-RUN apk add --no-cache protobuf protobuf-dev git curl
+RUN apk add --no-cache protobuf protobuf-dev git curl make
 
 # Install Go protoc plugins
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -46,13 +46,9 @@ RUN protoc \
 # Copy the rest of backend source code
 COPY backend/ ./backend/
 
-# Generate ent ORM code from schema
 WORKDIR /build/backend
-RUN go run entgo.io/ent/cmd/ent generate ./ent/schema
-
-# Build binaries
-RUN CGO_ENABLED=0 GOOS=linux go build -o luminance-api ./cmd/luminance-api
-RUN CGO_ENABLED=0 GOOS=linux go build -o luminance-migrate ./cmd/migrate
+RUN make generate
+RUN make build
 
 
 # =============================================================================

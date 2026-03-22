@@ -34,4 +34,4 @@ echo "[start] Ensuring Redis runtime directories..."
 mkdir -p /var/run/redis
 
 echo "[start] Handing off to monit..."
-exec /usr/bin/monit -Ic /etc/monit/monitrc
+exec /usr/local/bin/monit -Ic /etc/monit/monitrc

@@ -30,7 +30,7 @@ init_instance() {
     sleep 3
 
     # Create application database
-    runuser -u luminance -- env PGPASSWORD="${PG_PASS}" psql -U "${PG_USER}" -p "${port}" -c "CREATE DATABASE ${dbname};" || true
+    runuser -u luminance -- env PGPASSWORD="${PG_PASS}" psql -U "${PG_USER}" -p "${port}" -d postgres -c "CREATE DATABASE ${dbname};" || true
 
     # Install requested extensions into the new database
     if [ -n "${extensions}" ]; then

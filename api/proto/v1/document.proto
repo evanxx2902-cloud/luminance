@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package luminance.v1;
+
+option go_package = "github.com/luminance/backend/api/luminance/v1;v1";
+
+import "google/protobuf/timestamp.proto";
+
+// 文档服务
+service DocumentService {
+  // 上传文档
+  rpc CreateDocument(CreateDocumentRequest) returns (Document);
+  // 获取文档详情
+  rpc GetDocument(GetDocumentRequest) returns (Document);
+  // 列出用户文档
+  rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
+  // 删除文档
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
+}
+
+message Document {
+  int32 id = 1;
+  int32 user_id = 2;
+  string title = 3;
+  string content = 4;
+  string file_path = 5;
+  string status = 6;  // pending, processing, completed, failed
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message CreateDocumentRequest {
+  int32 user_id = 1;
+  string title = 2;
+  string content = 3;
+  string file_path = 4;
+}
+
+message GetDocumentRequest {
+  int32 id = 1;
+}
+
+message ListDocumentsRequest {
+  int32 user_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListDocumentsResponse {
+  repeated Document documents = 1;
+  string next_page_token = 2;
+}
+
+message DeleteDocumentRequest {
+  int32 id = 1;
+}
+
+message DeleteDocumentResponse {
+  bool success = 1;
+}

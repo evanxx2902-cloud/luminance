@@ -8,6 +8,7 @@ COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 COPY backend/ .
 RUN CGO_ENABLED=0 GOOS=linux go build -o luminance-api ./cmd/luminance-api
+RUN CGO_ENABLED=0 GOOS=linux go build -o luminance-migrate ./cmd/migrate
 
 
 # =============================================================================
@@ -84,8 +85,9 @@ RUN mkdir -p \
       /etc/nginx/conf.d
 
 # ── Copy compiled artifacts from build stages ────────────────────────────
-COPY --from=go-builder       /build/backend/luminance-api /opt/luminance/bin/luminance-api
-COPY --from=frontend-builder /build/frontend/dist/         /opt/luminance/web/
+COPY --from=go-builder       /build/backend/luminance-api     /opt/luminance/bin/luminance-api
+COPY --from=go-builder       /build/backend/luminance-migrate /opt/luminance/bin/luminance-migrate
+COPY --from=frontend-builder /build/frontend/dist/             /opt/luminance/web/
 
 # ── Python AI service ─────────────────────────────────────────────────────
 COPY ai/requirements.txt /opt/luminance/ai/
@@ -93,12 +95,13 @@ RUN pip3 install --no-cache-dir -r /opt/luminance/ai/requirements.txt
 COPY ai/ /opt/luminance/ai/
 
 # ── Config and script files ───────────────────────────────────────────────
-COPY backend/configs/config.yaml /opt/luminance/configs/config.yaml
+COPY configs/config.yaml /opt/luminance/configs/config.yaml
 COPY nginx/nginx.conf             /etc/nginx/nginx.conf
 COPY nginx/conf.d/                /etc/nginx/conf.d/
 COPY monit/monitrc                /etc/monit/monitrc
 COPY monit/conf.d/                /etc/monit/conf.d/
 COPY scripts/                     /opt/luminance/scripts/
+COPY backend/migrations/          /opt/luminance/backend/migrations/
 
 RUN chmod +x /opt/luminance/scripts/*.sh && \
     chmod 600 /etc/monit/monitrc
